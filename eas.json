@@ -15,7 +15,12 @@
             "env": {
                 "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
             },
-            "node": "20.19.4"
+            "node": "20.19.4",
+            "hooks": {
+                "pre-install": {
+                    "command": "rm -f package-lock.json"
+                }
+            }
         },
         "production": {
             "android": {
