@@ -7,7 +7,6 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "postinstall": "npm install --legacy-peer-deps || true"
   },
   "dependencies": {
     "@expo/ngrok": "^4.1.3",
