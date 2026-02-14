@@ -13,10 +13,12 @@
                 "buildType": "apk"
             },
             "env": {
-                "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
-                "EAS_NO_VCS": "1"
+                "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
             },
-            "node": "20.19.4"
+            "node": "20.19.4",
+            "cache": {
+                "disabled": true
+            }
         },
         "production": {
             "android": {
