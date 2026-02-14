@@ -37,14 +37,18 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             playsInSilentModeIOS: true,
             shouldDuckAndroid: true,
             playThroughEarpieceAndroid: false,
+        }).catch((error) => {
+            console.error('Erro ao configurar modo de áudio:', error);
         });
 
         return () => {
             if (sound) {
-                sound.unloadAsync();
+                sound.unloadAsync().catch((error) => {
+                    console.error('Erro ao fazer unload do som:', error);
+                });
             }
         };
-    }, []);
+    }, [sound]);
 
     const onPlaybackStatusUpdate = (playbackStatus: any) => {
         console.log('Status update:', {
