@@ -10,7 +10,11 @@ import { initNotifications } from '../src/services/notifications';
 
 export default function RootLayout() {
     useEffect(() => {
-        initNotifications();
+        try {
+            initNotifications();
+        } catch (error) {
+            console.error('Erro ao inicializar notificações:', error);
+        }
     }, []);
 
     return (
