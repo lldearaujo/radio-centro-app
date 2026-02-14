@@ -15,10 +15,7 @@
             "env": {
                 "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
             },
-            "node": "20.19.4",
-            "cache": {
-                "disabled": true
-            }
+            "node": "20.19.4"
         },
         "production": {
             "android": {
