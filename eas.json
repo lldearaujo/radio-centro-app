@@ -13,14 +13,10 @@
                 "buildType": "apk"
             },
             "env": {
-                "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
+                "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
+                "EAS_NO_VCS": "1"
             },
-            "node": "20.19.4",
-            "hooks": {
-                "pre-install": {
-                    "command": "rm -f package-lock.json"
-                }
-            }
+            "node": "20.19.4"
         },
         "production": {
             "android": {
