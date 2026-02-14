@@ -13,10 +13,9 @@
                 "buildType": "apk"
             },
             "env": {
-                "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
-                "NPM_FLAGS": "--legacy-peer-deps"
+                "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
             },
-            "node": "20.18.1"
+            "node": "20.19.4"
         },
         "production": {
             "android": {
