@@ -31,15 +31,22 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     useEffect(() => {
         // Configure audio mode for background playback
-        Audio.setAudioModeAsync({
-            allowsRecordingIOS: false,
-            staysActiveInBackground: true,
-            playsInSilentModeIOS: true,
-            shouldDuckAndroid: true,
-            playThroughEarpieceAndroid: false,
-        }).catch((error) => {
-            console.error('Erro ao configurar modo de áudio:', error);
-        });
+        // Wrapped in try-catch to prevent crashes in Expo Go
+        const setupAudio = async () => {
+            try {
+                await Audio.setAudioModeAsync({
+                    allowsRecordingIOS: false,
+                    staysActiveInBackground: true,
+                    playsInSilentModeIOS: true,
+                    shouldDuckAndroid: true,
+                    playThroughEarpieceAndroid: false,
+                });
+            } catch (error) {
+                console.warn('Erro ao configurar modo de áudio (pode ser normal no Expo Go):', error);
+            }
+        };
+        
+        setupAudio();
 
         return () => {
             if (sound) {
@@ -97,7 +104,8 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             setStatus('Carregando...');
             hasPlayedRef.current = false; // Reset
 
-            const uri = Config.urls.audioStreamBackup;
+            // Usar stream HLS seguro (HTTPS) para evitar bloqueios de HTTP em produção
+            const uri = Config.urls.audioStreamHls || Config.urls.audioStream;
             console.log('Conectando ao stream:', uri);
 
             await Audio.setAudioModeAsync({

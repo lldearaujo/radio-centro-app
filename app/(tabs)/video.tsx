@@ -39,6 +39,14 @@ export default function VideoScreen() {
         }
     };
 
+    const handleFullscreen = async () => {
+        try {
+            await videoRef.current?.presentFullscreenPlayer();
+        } catch (error) {
+            console.warn('Erro ao entrar em tela cheia:', error);
+        }
+    };
+
 
     // Função para determinar o texto do botão
     const getButtonText = () => {
@@ -117,16 +125,28 @@ export default function VideoScreen() {
             {/* Controles e Informações abaixo do vídeo */}
             <View style={styles.infoContainer}>
                 <View style={styles.controlsRow}>
-                    <TouchableOpacity onPress={handleTogglePlay} style={styles.controlButton}>
-                        <MaterialIcons
-                            name={status?.isPlaying ? "pause" : "play-arrow"}
-                            size={40}
-                            color={Colors.primary}
-                        />
-                        <Text style={styles.controlText}>
-                            {getButtonText()}
-                        </Text>
-                    </TouchableOpacity>
+                    <View style={styles.controlsGroup}>
+                        <TouchableOpacity onPress={handleTogglePlay} style={styles.controlMain}>
+                            <MaterialIcons
+                                name={status?.isPlaying ? "pause" : "play-arrow"}
+                                size={32}
+                                color={Colors.primary}
+                            />
+                            <Text style={styles.controlText}>
+                                {getButtonText()}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <View style={styles.controlsDivider} />
+
+                        <TouchableOpacity onPress={handleFullscreen} style={styles.controlSecondary}>
+                            <MaterialIcons
+                                name="fullscreen"
+                                size={28}
+                                color={Colors.primary}
+                            />
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 <View style={styles.logoContainer}>
@@ -183,14 +203,32 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         marginBottom: Spacing.lg,
         alignItems: 'center',
+        justifyContent: 'center',
     },
-    controlButton: {
+    controlsGroup: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: Colors.gray,
-        paddingHorizontal: Spacing.lg,
-        paddingVertical: Spacing.sm,
-        borderRadius: 20,
+        borderRadius: 24,
+        paddingHorizontal: Spacing.sm,
+        paddingVertical: Spacing.xs,
+    },
+    controlMain: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: Spacing.md,
+        paddingVertical: Spacing.xs,
+    },
+    controlsDivider: {
+        width: 1,
+        height: 24,
+        backgroundColor: Colors.border,
+    },
+    controlSecondary: {
+        paddingHorizontal: Spacing.md,
+        paddingVertical: Spacing.xs,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     controlText: {
         marginLeft: Spacing.sm,

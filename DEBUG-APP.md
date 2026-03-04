@@ -2,14 +2,14 @@
 
 ## Possíveis Causas
 
-1. **New Architecture habilitada** - Pode causar problemas de compatibilidade
-2. **Erro no AudioContext** - Falha ao inicializar o modo de áudio
-3. **Erro nas notificações** - OneSignal pode estar causando crash
+1. **react-native-onesignal** - Módulo nativo que causa crash em builds de release quando não configurado corretamente (CAUSA PRINCIPAL RESOLVIDA)
+2. **New Architecture habilitada** - Pode causar problemas de compatibilidade
+3. **Erro no AudioContext** - Falha ao inicializar o modo de áudio
 4. **Dependências nativas não compiladas** - Algum módulo nativo pode estar faltando
 
 ## O que foi feito
 
-1. ✅ Desabilitado `newArchEnabled` no app.json
+1. ✅ **Removido react-native-onesignal** - Estava causando crash no Android após instalação
 2. ✅ Adicionado tratamento de erros no `initNotifications`
 3. ✅ Adicionado tratamento de erros no `AudioContext`
 
