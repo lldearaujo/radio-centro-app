@@ -548,7 +548,17 @@ def new_ad_form(request: Request):
     require_auth(request)
     return templates.TemplateResponse(
         "ads_form.html",
-        {"request": request, "error": None},
+        {
+            "request": request,
+            "error": None,
+            "title": "",
+            "image_url": "",
+            "target_url": "",
+            "position": "home_radio",
+            "kind": "image",
+            "html_snippet": "",
+            "is_active": True,
+        },
     )
 
 
@@ -556,15 +566,22 @@ def new_ad_form(request: Request):
 def create_ad(
     request: Request,
     title: str = Form(...),
-    image_url: str = Form(...),
+    image_url: str = Form(""),
     target_url: str = Form(""),
+    position: str = Form("home_radio"),
+    kind: str = Form("image"),
+    html_snippet: str = Form(""),
     is_active: bool = Form(False),
 ):
     require_auth(request)
 
     error = None
-    if not title.strip() or not image_url.strip():
-        error = "Título e URL da imagem são obrigatórios."
+    if not title.strip():
+        error = "Título é obrigatório."
+    elif kind == "image" and not image_url.strip():
+        error = "Para tipo Imagem, a URL da imagem é obrigatória."
+    elif kind == "adsense" and not html_snippet.strip():
+        error = "Para tipo AdSense/HTML, cole o código do anúncio."
 
     if error:
         return templates.TemplateResponse(
@@ -575,6 +592,9 @@ def create_ad(
                 "title": title,
                 "image_url": image_url,
                 "target_url": target_url,
+                "position": position,
+                "kind": kind,
+                "html_snippet": html_snippet,
                 "is_active": is_active,
             },
         )
@@ -587,21 +607,146 @@ def create_ad(
 
     payload = {
         "title": title.strip(),
-        "image_url": image_url.strip(),
+        "image_url": image_url.strip() or None,
         "target_url": target_url.strip() or None,
-        "position": "home_radio",
+        "position": position.strip() or "home_radio",
+        "kind": (kind or "image").strip(),
+        "html_snippet": html_snippet.strip() or None,
         "is_active": bool(is_active),
     }
 
     try:
         if payload["is_active"]:
             # Desativa outros banners da mesma posição
-            supabase.table("ads_banners").update({"is_active": False}).eq("position", "home_radio").execute()
+            supabase.table("ads_banners").update({"is_active": False}).eq("position", payload["position"]).execute()
 
         supabase.table("ads_banners").insert(payload).execute()
         return RedirectResponse(url="/ads", status_code=HTTP_302_FOUND)
     except Exception as e:
         logger.exception("create_ad: erro ao criar banner: %s", e)
+        return _error_html_response(str(e), _supabase_hint(e))
+
+
+@app.get("/ads/{ad_id}/edit")
+def edit_ad_form(ad_id: str, request: Request):
+    require_auth(request)
+    try:
+        supabase = get_supabase()
+    except Exception as e:
+        logger.exception("edit_ad_form: erro ao obter Supabase: %s", e)
+        return _error_html_response(str(e), _supabase_hint(e))
+
+    try:
+        res = supabase.table("ads_banners").select("*").eq("id", ad_id).single().execute()
+        ad = res.data
+        if not ad:
+            raise HTTPException(status_code=404, detail="Banner não encontrado.")
+    except Exception as e:
+        logger.exception("edit_ad_form: erro ao buscar banner: %s", e)
+        return _error_html_response(str(e), _supabase_hint(e))
+
+    return templates.TemplateResponse(
+        "ads_form.html",
+        {
+            "request": request,
+            "error": None,
+            "ad_id": ad_id,
+            "title": ad.get("title") or "",
+            "image_url": ad.get("image_url") or "",
+            "target_url": ad.get("target_url") or "",
+            "position": ad.get("position") or "home_radio",
+            "kind": ad.get("kind") or "image",
+            "html_snippet": ad.get("html_snippet") or "",
+            "is_active": bool(ad.get("is_active")),
+        },
+    )
+
+
+@app.post("/ads/{ad_id}/edit")
+def update_ad(
+    ad_id: str,
+    request: Request,
+    title: str = Form(...),
+    image_url: str = Form(""),
+    target_url: str = Form(""),
+    position: str = Form("home_radio"),
+    kind: str = Form("image"),
+    html_snippet: str = Form(""),
+    is_active: bool = Form(False),
+):
+    require_auth(request)
+
+    error = None
+    if not title.strip():
+        error = "Título é obrigatório."
+    elif kind == "image" and not image_url.strip():
+        error = "Para tipo Imagem, a URL da imagem é obrigatória."
+    elif kind == "adsense" and not html_snippet.strip():
+        error = "Para tipo AdSense/HTML, cole o código do anúncio."
+
+    if error:
+        return templates.TemplateResponse(
+            "ads_form.html",
+            {
+                "request": request,
+                "error": error,
+                "ad_id": ad_id,
+                "title": title,
+                "image_url": image_url,
+                "target_url": target_url,
+                "position": position,
+                "kind": kind,
+                "html_snippet": html_snippet,
+                "is_active": is_active,
+            },
+        )
+
+    try:
+        supabase = get_supabase()
+    except Exception as e:
+        logger.exception("update_ad: erro ao obter Supabase: %s", e)
+        return _error_html_response(str(e), _supabase_hint(e))
+
+    payload = {
+        "title": title.strip(),
+        "image_url": image_url.strip() or None,
+        "target_url": target_url.strip() or None,
+        "position": position.strip() or "home_radio",
+        "kind": (kind or "image").strip(),
+        "html_snippet": html_snippet.strip() or None,
+        "is_active": bool(is_active),
+    }
+
+    try:
+        # Atualiza o banner alvo
+        supabase.table("ads_banners").update(payload).eq("id", ad_id).execute()
+
+        if payload["is_active"]:
+            # Desativa outros banners da mesma posição
+            supabase.table("ads_banners").update({"is_active": False}).eq(
+                "position", payload["position"]
+            ).neq("id", ad_id).execute()
+
+        return RedirectResponse(url="/ads", status_code=HTTP_302_FOUND)
+    except Exception as e:
+        logger.exception("update_ad: erro ao atualizar banner: %s", e)
+        return _error_html_response(str(e), _supabase_hint(e))
+
+
+@app.post("/ads/{ad_id}/delete")
+def delete_ad(ad_id: str, request: Request):
+    require_auth(request)
+    try:
+        supabase = get_supabase()
+    except Exception as e:
+        logger.exception("delete_ad: erro ao obter Supabase: %s", e)
+        return _error_html_response(str(e), _supabase_hint(e))
+
+    try:
+        supabase.table("ads_banners").delete().eq("id", ad_id).execute()
+        return RedirectResponse(url="/ads", status_code=HTTP_302_FOUND)
+    except Exception as e:
+        logger.exception("delete_ad: erro ao apagar banner: %s", e)
         return _error_html_response(str(e), _supabase_hint(e))
 
 

@@ -25,9 +25,18 @@ const registerTokenInSupabase = async (token: string) => {
         },
         { onConflict: 'expo_push_token' },
       );
+    console.log('[Notifications] Token registrado no Supabase com sucesso.');
   } catch (error) {
     console.warn('[Notifications] Erro ao registrar token no Supabase:', error);
   }
+};
+
+const resolveProjectId = (): string | undefined => {
+  const extraAny = Constants.expoConfig?.extra as any | undefined;
+  const fromExtra = extraAny?.eas?.projectId;
+  const fromLegacyExtra = (Constants.expoConfig as any)?.extra?.eas?.projectId;
+  const fromEasConfig = (Constants as any).easConfig?.projectId;
+  return fromExtra || fromLegacyExtra || fromEasConfig;
 };
 
 const registerForPushNotificationsAsync = async (): Promise<void> => {
@@ -35,21 +44,10 @@ const registerForPushNotificationsAsync = async (): Promise<void> => {
     return;
   }
 
-  // Em Expo Go (appOwnership === 'expo') as notificações push remotas não são suportadas.
-  // Evitamos chamar a API de token para não gerar erro na inicialização.
-  if (Constants.appOwnership === 'expo') {
-    console.warn(
-      '[Notifications] Push remoto não é suportado no Expo Go. Use um build de desenvolvimento para testar notificações.',
-    );
-    return;
-  }
-
-  const projectId =
-    (Constants.expoConfig?.extra as any)?.eas?.projectId ||
-    (Constants.expoConfig as any)?.extra?.eas?.projectId;
+  const projectId = resolveProjectId();
 
   if (!projectId) {
-    console.warn('[Notifications] EAS projectId não configurado em expo.extra.');
+    console.warn('[Notifications] EAS projectId não configurado (extra.eas.projectId ou Constants.easConfig).');
     return;
   }
 
@@ -79,6 +77,8 @@ const registerForPushNotificationsAsync = async (): Promise<void> => {
 
   if (token) {
     await registerTokenInSupabase(token);
+  } else {
+    console.warn('[Notifications] getExpoPushTokenAsync não retornou token.');
   }
 };
 

@@ -49,6 +49,24 @@ export default function AudioScreen() {
         }).catch(err => console.error('An error occurred', err));
     };
 
+    const handleInstagram = () => {
+        const username = Config.social.instagram;
+        if (!username) {
+            return;
+        }
+        const appUrl = `instagram://user?username=${username}`;
+        const webUrl = `https://instagram.com/${username}`;
+
+        Linking.canOpenURL(appUrl)
+            .then(supported => {
+                if (supported) {
+                    return Linking.openURL(appUrl);
+                }
+                return Linking.openURL(webUrl);
+            })
+            .catch(err => console.error('Erro ao abrir Instagram', err));
+    };
+
     useEffect(() => {
         const loadBanner = async () => {
             try {
@@ -182,27 +200,34 @@ export default function AudioScreen() {
                     <Text style={styles.statusText}>{status}</Text>
                 </View>
 
+                {banner && (
+                    <View style={styles.bannerWrapper}>
+                        <Text style={styles.adLabel}>Publicidade</Text>
+                        <TouchableOpacity
+                            style={styles.bannerContainer}
+                            activeOpacity={0.9}
+                            onPress={() => banner.targetUrl && Linking.openURL(banner.targetUrl)}
+                            disabled={!banner.targetUrl}
+                        >
+                            <Image
+                                source={{ uri: banner.imageUrl }}
+                                style={styles.bannerImage}
+                                resizeMode="cover"
+                            />
+                        </TouchableOpacity>
+                    </View>
+                )}
+
                 <View style={styles.actionsContainer}>
                     <TouchableOpacity style={styles.messageButton} onPress={handleWhatsApp}>
                         <FontAwesome name="whatsapp" size={24} color="#FFF" />
                         <Text style={styles.messageButtonText}>Enviar Mensagem</Text>
                     </TouchableOpacity>
-                </View>
-
-                {banner && (
-                    <TouchableOpacity
-                        style={styles.bannerContainer}
-                        activeOpacity={0.9}
-                        onPress={() => banner.targetUrl && Linking.openURL(banner.targetUrl)}
-                        disabled={!banner.targetUrl}
-                    >
-                        <Image
-                            source={{ uri: banner.imageUrl }}
-                            style={styles.bannerImage}
-                            resizeMode="cover"
-                        />
+                    <TouchableOpacity style={styles.instagramButton} onPress={handleInstagram}>
+                        <FontAwesome name="instagram" size={24} color="#FFF" />
+                        <Text style={styles.instagramButtonText}>Instagram</Text>
                     </TouchableOpacity>
-                )}
+                </View>
 
                 {/* Enquete em destaque */}
                 <View style={styles.pollContainer}>
@@ -220,6 +245,7 @@ export default function AudioScreen() {
                                 isLoadingResults={false}
                                 hasVoted={highlightHasVoted}
                                 onVote={handleVoteHighlight}
+                                defaultCollapsed
                             />
                         </>
                     ) : null}
@@ -295,27 +321,30 @@ const styles = StyleSheet.create({
     controlsContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: Spacing.md,
-        marginBottom: Spacing.xl,
+        marginTop: 0,
+        marginBottom: Spacing.sm,
     },
     playButton: {
         padding: Spacing.sm,
     },
     statusText: {
-        marginTop: Spacing.md,
+        marginTop: Spacing.sm,
         color: Colors.textLight,
         fontSize: FontSize.sm,
     },
     actionsContainer: {
         width: '100%',
-        marginTop: Spacing.lg,
+        marginTop: Spacing.md,
+        flexDirection: 'row',
         alignItems: 'center',
     },
     messageButton: {
+        flex: 1,
+        marginRight: Spacing.sm,
         flexDirection: 'row',
         backgroundColor: '#25D366', // WhatsApp Brand Color
         paddingVertical: Spacing.md,
-        paddingHorizontal: Spacing.xl,
+        justifyContent: 'center',
         borderRadius: 25,
         alignItems: 'center',
         elevation: 3,
@@ -330,9 +359,40 @@ const styles = StyleSheet.create({
         fontSize: FontSize.md,
         marginLeft: Spacing.sm,
     },
-    bannerContainer: {
+    instagramButton: {
+        flex: 1,
+        marginLeft: Spacing.sm,
+        flexDirection: 'row',
+        backgroundColor: '#E4405F', // Instagram brand color
+        paddingVertical: Spacing.md,
+        justifyContent: 'center',
+        borderRadius: 25,
+        alignItems: 'center',
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+    },
+    instagramButtonText: {
+        color: '#FFF',
+        fontWeight: 'bold',
+        fontSize: FontSize.md,
+        marginLeft: Spacing.sm,
+    },
+    adLabel: {
+        textAlign: 'center',
+        marginBottom: Spacing.xs,
+        fontSize: FontSize.xs,
+        color: Colors.textLight,
+        fontStyle: 'italic',
+    },
+    bannerWrapper: {
         width: '100%',
         marginTop: Spacing.lg,
+    },
+    bannerContainer: {
+        width: '100%',
         borderRadius: 16,
         overflow: 'hidden',
         backgroundColor: Colors.gray,

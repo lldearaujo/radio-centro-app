@@ -17,8 +17,10 @@
           <tr>
             <th>Título</th>
             <th>Posição</th>
+            <th>Tipo</th>
             <th>Ativo</th>
             <th>Criado em</th>
+            <th style="width: 160px;">Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -26,8 +28,15 @@
             <tr>
               <td>{{ ad.title }}</td>
               <td>{{ ad.position }}</td>
+              <td>{{ ad.kind or 'image' }}</td>
               <td>{{ "Sim" if ad.is_active else "Não" }}</td>
               <td>{{ ad.created_at[:19] if ad.created_at else "-" }}</td>
+              <td>
+                <a href="/ads/{{ ad.id }}/edit" class="rc-button rc-button-small">Editar</a>
+                <form method="post" action="/ads/{{ ad.id }}/delete" style="display:inline-block;margin-left:4px;" onsubmit="return confirm('Tem certeza que deseja excluir este banner?');">
+                  <button type="submit" class="rc-button rc-button-small rc-button-danger">Excluir</button>
+                </form>
+              </td>
             </tr>
           {% endfor %}
         </tbody>

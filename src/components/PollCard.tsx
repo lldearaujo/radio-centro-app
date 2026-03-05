@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize } from '../constants/theme';
 import { PollWithOptions, PollResultsOption } from '../services/polls';
 
@@ -18,6 +19,7 @@ interface PollCardProps {
   isLoadingResults?: boolean;
   hasVoted: boolean;
   onVote: (optionId: string) => Promise<void>;
+  defaultCollapsed?: boolean;
 }
 
 export const PollCard: React.FC<PollCardProps> = ({
@@ -26,10 +28,12 @@ export const PollCard: React.FC<PollCardProps> = ({
   isLoadingResults,
   hasVoted,
   onVote,
+  defaultCollapsed,
 }) => {
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isClosed = poll.status === 'closed';
+  const [collapsed, setCollapsed] = useState<boolean>(!!defaultCollapsed);
 
   const optionsWithStats = useMemo(() => {
     if (!results) {
@@ -74,107 +78,137 @@ export const PollCard: React.FC<PollCardProps> = ({
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>{poll.title}</Text>
-      {poll.description ? (
-        <Text style={styles.description}>{poll.description}</Text>
-      ) : null}
+      <TouchableOpacity
+        style={styles.header}
+        activeOpacity={0.8}
+        onPress={() => setCollapsed((prev) => !prev)}
+      >
+        <View style={styles.headerTextWrapper}>
+          <Text style={styles.title}>{poll.title}</Text>
+        </View>
+        <MaterialIcons
+          name={collapsed ? 'expand-more' : 'expand-less'}
+          size={24}
+          color={Colors.textLight}
+        />
+      </TouchableOpacity>
 
-      {poll.starts_at || poll.ends_at ? (
-        <Text style={styles.meta}>
-          {poll.starts_at
-            ? `Início: ${new Date(poll.starts_at).toLocaleDateString()}`
-            : ''}
-          {poll.ends_at
-            ? `  •  Fim: ${new Date(poll.ends_at).toLocaleDateString()}`
-            : ''}
-        </Text>
-      ) : null}
+      {!collapsed && (
+        <>
+          {poll.description ? (
+            <Text style={styles.description}>{poll.description}</Text>
+          ) : null}
 
-      <View style={styles.optionsContainer}>
-        {optionsWithStats.map((opt) => {
-          const isSelected = selectedOptionId === opt.optionId;
-          const isDisabled = showResults || isSubmitting;
-          const percentageLabel = `${opt.percentage.toFixed(0)}%`;
+          {poll.starts_at || poll.ends_at ? (
+            <Text style={styles.meta}>
+              {poll.starts_at
+                ? `Início: ${new Date(poll.starts_at).toLocaleDateString()}`
+                : ''}
+              {poll.ends_at
+                ? `  •  Fim: ${new Date(poll.ends_at).toLocaleDateString()}`
+                : ''}
+            </Text>
+          ) : null}
 
-          return (
-            <TouchableOpacity
-              key={opt.optionId}
-              style={[
-                styles.optionRow,
-                isSelected && !showResults && styles.optionRowSelected,
-              ]}
-              activeOpacity={0.8}
-              disabled={isDisabled}
-              onPress={() => setSelectedOptionId(opt.optionId)}
-            >
-              <View style={styles.optionLabelWrapper}>
-                <View style={styles.radioOuter}>
-                  {isSelected && !showResults && <View style={styles.radioInner} />}
-                </View>
-                <Text style={styles.optionLabel}>{opt.label}</Text>
-              </View>
+          <View style={styles.optionsContainer}>
+            {optionsWithStats.map((opt) => {
+              const isSelected = selectedOptionId === opt.optionId;
+              const isDisabled = showResults || isSubmitting;
+              const percentageLabel = `${opt.percentage.toFixed(0)}%`;
 
-              {showResults && (
-                <View style={styles.resultsWrapper}>
-                  <View style={styles.resultsBarBackground}>
-                    <View
-                      style={[
-                        styles.resultsBarFill,
-                        { width: `${opt.percentage}%` },
-                      ]}
-                    />
+              return (
+                <TouchableOpacity
+                  key={opt.optionId}
+                  style={[
+                    styles.optionRow,
+                    isSelected && !showResults && styles.optionRowSelected,
+                  ]}
+                  activeOpacity={0.8}
+                  disabled={isDisabled}
+                  onPress={() => setSelectedOptionId(opt.optionId)}
+                >
+                  <View style={styles.optionLabelWrapper}>
+                    <View style={styles.radioOuter}>
+                      {isSelected && !showResults && <View style={styles.radioInner} />}
+                    </View>
+                    <Text style={styles.optionLabel}>{opt.label}</Text>
                   </View>
-                  <Text style={styles.resultsText}>{percentageLabel}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
 
-      <View style={styles.footer}>
-        {showResults ? (
-          <Text style={styles.footerText}>
-            {isLoadingResults ? 'Atualizando resultados...' : 'Resultados da enquete'}
-          </Text>
-        ) : (
-          <TouchableOpacity
-            style={[
-              styles.voteButton,
-              (!selectedOptionId || isSubmitting) && styles.voteButtonDisabled,
-            ]}
-            onPress={handleVote}
-            disabled={!selectedOptionId || isSubmitting}
-          >
-            {isSubmitting ? (
-              <ActivityIndicator color={Colors.white} />
+                  {showResults && (
+                    <View style={styles.resultsWrapper}>
+                      <View style={styles.resultsBarBackground}>
+                        <View
+                          style={[
+                            styles.resultsBarFill,
+                            { width: `${opt.percentage}%` },
+                          ]}
+                        />
+                      </View>
+                      <Text style={styles.resultsText}>{percentageLabel}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <View style={styles.footer}>
+            {showResults ? (
+              <Text style={styles.footerText}>
+                {isLoadingResults ? 'Atualizando resultados...' : 'Resultados da enquete'}
+              </Text>
             ) : (
-              <Text style={styles.voteButtonText}>Votar</Text>
+              <TouchableOpacity
+                style={[
+                  styles.voteButton,
+                  (!selectedOptionId || isSubmitting) && styles.voteButtonDisabled,
+                ]}
+                onPress={handleVote}
+                disabled={!selectedOptionId || isSubmitting}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color={Colors.white} />
+                ) : (
+                  <Text style={styles.voteButtonText}>Votar</Text>
+                )}
+              </TouchableOpacity>
             )}
-          </TouchableOpacity>
-        )}
-        {results && results.totalVotes > 0 && (
-          <Text style={styles.totalVotes}>
-            {results.totalVotes} voto{results.totalVotes === 1 ? '' : 's'}
-          </Text>
-        )}
-      </View>
+            {results && results.totalVotes > 0 && (
+              <Text style={styles.totalVotes}>
+                {results.totalVotes} voto{results.totalVotes === 1 ? '' : 's'}
+              </Text>
+            )}
+          </View>
+        </>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.white,
-    borderRadius: 12,
+    backgroundColor: '#FFF8F8',
+    borderRadius: 16,
     padding: Spacing.md,
     marginHorizontal: Spacing.md,
     marginVertical: Spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(211, 47, 47, 0.18)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.xs,
+  },
+  headerTextWrapper: {
+    flex: 1,
+    marginRight: Spacing.sm,
   },
   title: {
     fontSize: FontSize.lg,

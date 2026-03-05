@@ -1,10 +1,10 @@
 {% extends "layout.html" %}
 
-{% block title %}Novo banner{% endblock %}
+{% block title %}{{ ad_id and "Editar banner" or "Novo banner" }}{% endblock %}
 
 {% block content %}
   <section class="rc-card">
-    <h1>Novo banner</h1>
+    <h1>{{ ad_id and "Editar banner" or "Novo banner" }}</h1>
 
     {% if error %}
       <p class="rc-error">{{ error }}</p>
@@ -17,8 +17,21 @@
       </label>
 
       <label>
+        Tipo de banner
+        <select name="kind">
+          <option value="image" {% if kind == 'image' or not kind %}selected{% endif %}>
+            Imagem (app móvel)
+          </option>
+          <option value="adsense" {% if kind == 'adsense' %}selected{% endif %}>
+            Código AdSense / HTML
+          </option>
+        </select>
+      </label>
+
+      <label>
         URL da imagem (https://...)
-        <input type="text" name="image_url" required value="{{ image_url or '' }}" />
+        <input type="text" name="image_url" value="{{ image_url or '' }}" />
+        <small>Obrigatório para tipo Imagem. Ignorado para AdSense.</small>
       </label>
 
       <label>
@@ -26,9 +39,26 @@
         <input type="text" name="target_url" value="{{ target_url or '' }}" placeholder="https://..." />
       </label>
 
+      <label>
+        Código AdSense / HTML (opcional)
+        <textarea name="html_snippet" rows="6" placeholder="Cole aqui o código do anúncio (somente para uso em páginas web).">{{ html_snippet or '' }}</textarea>
+      </label>
+
+      <label>
+        Posição no app
+        <select name="position">
+          <option value="home_radio" {% if position == 'home_radio' or not position %}selected{% endif %}>
+            Home - tela Rádio
+          </option>
+          <option value="video_top" {% if position == 'video_top' %}selected{% endif %}>
+            TV/Vídeo - abaixo do player
+          </option>
+        </select>
+      </label>
+
       <label class="rc-inline">
         <input type="checkbox" name="is_active" value="true" {% if is_active %}checked{% endif %} />
-        Ativar este banner na home do app
+        Ativar este banner na posição escolhida
       </label>
 
       <button type="submit" class="rc-button rc-button-primary">Salvar</button>

@@ -151,6 +151,7 @@ export default function PollsScreen() {
             isLoadingResults={false}
             hasVoted={!!votedPolls[poll.id]}
             onVote={handleVoteFactory(poll.id)}
+            defaultCollapsed={false}
           />
         ))
       )}

@@ -1,16 +1,18 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Linking, ScrollView } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { useFocusEffect } from 'expo-router';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize } from '../../src/constants/theme';
 import { Config } from '../../src/constants/config';
 import { useAudio } from '../../src/context/AudioContext';
+import { getActiveVideoBanner, HomeBanner } from '../../src/services/ads';
 
 export default function VideoScreen() {
     const videoRef = useRef<Video>(null);
     const [status, setStatus] = useState<any>({});
     const { pause: pauseAudio, isPlaying: isAudioPlaying } = useAudio();
+    const [banner, setBanner] = useState<HomeBanner | null>(null);
 
     // Rastrear se o vídeo já começou a tocar (para ignorar buffering contínuo)
     const hasPlayedRef = useRef(false);
@@ -30,6 +32,19 @@ export default function VideoScreen() {
             };
         }, [isAudioPlaying, pauseAudio])
     );
+
+    useEffect(() => {
+        const loadBanner = async () => {
+            try {
+                const activeBanner = await getActiveVideoBanner();
+                setBanner(activeBanner);
+            } catch (error) {
+                console.warn('[VideoScreen] Erro ao carregar banner de vídeo:', error);
+            }
+        };
+
+        loadBanner();
+    }, []);
 
     const handleTogglePlay = async () => {
         if (status?.isPlaying) {
@@ -84,7 +99,7 @@ export default function VideoScreen() {
     };
 
     return (
-        <View style={styles.container}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
             <View style={styles.videoWrapper}>
                 <Video
                     ref={videoRef}
@@ -157,18 +172,40 @@ export default function VideoScreen() {
                     />
                 </View>
 
+                {banner && (
+                    <View style={styles.bannerWrapper}>
+                        <Text style={styles.adLabel}>Publicidade</Text>
+                        <TouchableOpacity
+                            style={styles.bannerContainer}
+                            activeOpacity={0.9}
+                            onPress={() => banner.targetUrl && Linking.openURL(banner.targetUrl)}
+                            disabled={!banner.targetUrl}
+                        >
+                            <Image
+                                source={{ uri: banner.imageUrl }}
+                                style={styles.bannerImage}
+                                resizeMode="cover"
+                            />
+                        </TouchableOpacity>
+                    </View>
+                )}
+
                 <TouchableOpacity style={styles.messageButton} onPress={handleWhatsApp}>
                     <FontAwesome name="whatsapp" size={24} color="#FFF" />
                     <Text style={styles.messageButtonText}>Enviar Mensagem</Text>
                 </TouchableOpacity>
             </View>
-        </View>
+        </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: Colors.background,
+    },
+    scrollContent: {
+        flexGrow: 1,
         backgroundColor: Colors.background,
     },
     videoWrapper: {
@@ -239,13 +276,39 @@ const styles = StyleSheet.create({
     logoContainer: {
         width: '60%',
         height: 80,
-        marginBottom: Spacing.xl,
+        marginBottom: Spacing.lg,
         alignItems: 'center',
         justifyContent: 'center',
     },
     logo: {
         width: '100%',
         height: '100%',
+    },
+    bannerWrapper: {
+        width: '100%',
+        marginBottom: Spacing.lg,
+    },
+    adLabel: {
+        textAlign: 'center',
+        marginBottom: Spacing.xs,
+        fontSize: FontSize.xs,
+        color: Colors.textLight,
+        fontStyle: 'italic',
+    },
+    bannerContainer: {
+        width: '100%',
+        borderRadius: 16,
+        overflow: 'hidden',
+        backgroundColor: Colors.gray,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    bannerImage: {
+        width: '100%',
+        height: 120,
     },
     messageButton: {
         flexDirection: 'row',

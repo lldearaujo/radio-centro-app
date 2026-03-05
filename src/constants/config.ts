@@ -9,7 +9,7 @@ export const Config = {
     },
     social: {
         whatsapp: '5583999863252', // Número oficial da Rádio Centro (83 99986-3252)
-        instagram: '',
+        instagram: 'radiocentrocz',
         facebook: '',
     },
     app: {

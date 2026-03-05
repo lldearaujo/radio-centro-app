@@ -16,34 +16,40 @@ const ensureClient = () => {
   return supabase;
 };
 
-export const getActiveHomeBanner = async (): Promise<HomeBanner | null> => {
+const getActiveBannerByPosition = async (position: string): Promise<HomeBanner | null> => {
   const client = ensureClient();
 
   const { data, error } = await client
     .from('ads_banners')
-    .select('id, title, image_url, target_url, position, is_active')
-    .eq('position', 'home_radio')
+    .select('id, title, image_url, target_url, position, is_active, kind')
+    .eq('position', position)
     .eq('is_active', true)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .eq('kind', 'image')
+    .order('created_at', { ascending: false });
 
   if (error) {
-    // PGRST116 = no rows returned for single/maybeSingle
-    if ((error as any).code === 'PGRST116') {
-      return null;
-    }
     console.error('[Ads] Erro ao buscar banner ativo:', error);
     throw error;
   }
 
-  if (!data) return null;
+  if (!data || !Array.isArray(data) || data.length === 0) return null;
+
+  const randomIndex = Math.floor(Math.random() * data.length);
+  const chosen = data[randomIndex];
 
   return {
-    id: data.id as string,
-    title: (data.title as string) ?? '',
-    imageUrl: (data.image_url as string) ?? '',
-    targetUrl: (data.target_url as string | null) ?? null,
+    id: chosen.id as string,
+    title: (chosen.title as string) ?? '',
+    imageUrl: (chosen.image_url as string) ?? '',
+    targetUrl: (chosen.target_url as string | null) ?? null,
   };
+};
+
+export const getActiveHomeBanner = async (): Promise<HomeBanner | null> => {
+  return getActiveBannerByPosition('home_radio');
+};
+
+export const getActiveVideoBanner = async (): Promise<HomeBanner | null> => {
+  return getActiveBannerByPosition('video_top');
 };
 
