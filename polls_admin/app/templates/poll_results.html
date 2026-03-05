@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+
+{% block title %}Resultados - {{ poll.title }}{% endblock %}
+
+{% block content %}
+  <section class="rc-card">
+    <h1>Resultados da enquete</h1>
+    <h2 class="rc-poll-title">{{ poll.title }}</h2>
+    {% if poll.description %}
+      <p class="rc-poll-description">{{ poll.description }}</p>
+    {% endif %}
+
+    <p>Total de votos: <strong>{{ total_votes }}</strong></p>
+
+    <table class="rc-table">
+      <thead>
+        <tr>
+          <th>Opção</th>
+          <th>Votos</th>
+          <th>%</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for opt in options %}
+          <tr>
+            <td>{{ opt.label }}</td>
+            <td>{{ opt.votes }}</td>
+            <td>{{ '%.0f'|format(opt.percentage) }}%</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <p>
+      <a href="/polls">Voltar para lista de enquetes</a>
+    </p>
+  </section>
+{% endblock %}
+

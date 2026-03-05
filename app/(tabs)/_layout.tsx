@@ -25,7 +25,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="index"
                 options={{
-                    title: 'Rádio Centro',
+                    title: 'Ao vivo',
                     tabBarLabel: 'Rádio',
                     tabBarIcon: ({ color, size }) => (
                         <MaterialIcons name="radio" size={size} color={color} />
@@ -49,6 +49,26 @@ export default function TabLayout() {
                     tabBarLabel: 'Notícias',
                     tabBarIcon: ({ color, size }) => (
                         <MaterialIcons name="article" size={size} color={color} />
+                    ),
+                }}
+            />
+            <Tabs.Screen
+                name="schedule"
+                options={{
+                    title: 'Programação',
+                    tabBarLabel: 'Programação',
+                    tabBarIcon: ({ color, size }) => (
+                        <MaterialIcons name="schedule" size={size} color={color} />
+                    ),
+                }}
+            />
+            <Tabs.Screen
+                name="polls"
+                options={{
+                    title: 'Enquetes',
+                    tabBarLabel: 'Enquetes',
+                    tabBarIcon: ({ color, size }) => (
+                        <MaterialIcons name="how-to-vote" size={size} color={color} />
                     ),
                 }}
             />

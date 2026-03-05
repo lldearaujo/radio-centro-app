@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+
+{% block title %}Programas{% endblock %}
+
+{% block content %}
+  <section class="rc-card">
+    <div class="rc-card-header">
+      <h1>Programas da rádio</h1>
+      <a href="/programs/new" class="rc-button rc-button-primary">Novo programa</a>
+    </div>
+
+    {% if programs|length == 0 %}
+      <p>Nenhum programa cadastrado ainda.</p>
+    {% else %}
+      <table class="rc-table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Apresentador</th>
+            <th>Dias</th>
+            <th>Horário</th>
+            <th>Notificar</th>
+            <th>Ativo</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for prog in programs %}
+            <tr>
+              <td>{{ prog.name }}</td>
+              <td>{{ prog.host or "-" }}</td>
+              <td>{{ prog.weekdays_label }}</td>
+              <td>{{ prog.start_time[:5] }} - {{ prog.end_time[:5] }}</td>
+              <td>{{ "Sim" if prog.notify_on_start else "Não" }}</td>
+              <td>{{ "Sim" if prog.is_active else "Não" }}</td>
+              <td>
+                <form
+                  method="post"
+                  action="/programs/{{ prog.id }}/notify"
+                  style="display:inline"
+                  onsubmit="return confirm('Enviar notificação para o início deste programa?');"
+                >
+                  <button type="submit" class="rc-button">Notificar agora</button>
+                </form>
+                <form
+                  method="post"
+                  action="/programs/{{ prog.id }}/delete"
+                  style="display:inline;margin-left:4px"
+                  onsubmit="return confirm('Deseja realmente apagar este programa?');"
+                >
+                  <button type="submit" class="rc-button rc-button-danger">Apagar</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </section>
+{% endblock %}
+

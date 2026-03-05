@@ -4,6 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useAudio } from '../context/AudioContext';
 import { Colors, Spacing, FontSize } from '../constants/theme';
 import { useRouter, usePathname } from 'expo-router';
+import { Config } from '../constants/config';
 
 export const MiniPlayer = () => {
     const { isPlaying, isLoading, play, pause, status } = useAudio();
@@ -31,7 +32,7 @@ export const MiniPlayer = () => {
     return (
         <View style={styles.container}>
             <TouchableOpacity style={styles.infoContainer} onPress={handlePress}>
-                <Text style={styles.title} numberOfLines={1}>Rádio Centro Cajazeiras</Text>
+                <Text style={styles.title} numberOfLines={1}>{Config.app.name}</Text>
                 <Text style={styles.status}>{status || 'Toque para abrir'}</Text>
             </TouchableOpacity>
 

@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+{% block title %}Erro{% endblock %}
+{% block content %}
+  <section class="rc-card">
+    <h2>Erro ao carregar</h2>
+    <p class="rc-error-msg">{{ message }}</p>
+    {% if hint %}
+      <p class="rc-error-hint">{{ hint }}</p>
+    {% endif %}
+    <p><a href="/polls" class="rc-button">Tentar novamente</a></p>
+  </section>
+{% endblock %}

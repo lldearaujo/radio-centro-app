@@ -8,7 +8,7 @@ export const Config = {
         website: 'https://radiocentrocz.com.br/',
     },
     social: {
-        whatsapp: '5583993132646', // Número da Rádio Centro (Adicionei um placeholder, verificar se é este)
+        whatsapp: '5583999863252', // Número oficial da Rádio Centro (83 99986-3252)
         instagram: '',
         facebook: '',
     },

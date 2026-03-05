@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+
+{% block title %}Novo banner{% endblock %}
+
+{% block content %}
+  <section class="rc-card">
+    <h1>Novo banner</h1>
+
+    {% if error %}
+      <p class="rc-error">{{ error }}</p>
+    {% endif %}
+
+    <form method="post" class="rc-form">
+      <label>
+        Título interno
+        <input type="text" name="title" required value="{{ title or '' }}" />
+      </label>
+
+      <label>
+        URL da imagem (https://...)
+        <input type="text" name="image_url" required value="{{ image_url or '' }}" />
+      </label>
+
+      <label>
+        Link ao tocar (opcional)
+        <input type="text" name="target_url" value="{{ target_url or '' }}" placeholder="https://..." />
+      </label>
+
+      <label class="rc-inline">
+        <input type="checkbox" name="is_active" value="true" {% if is_active %}checked{% endif %} />
+        Ativar este banner na home do app
+      </label>
+
+      <button type="submit" class="rc-button rc-button-primary">Salvar</button>
+    </form>
+  </section>
+{% endblock %}
+

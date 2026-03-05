@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+
+{% block title %}Banners{% endblock %}
+
+{% block content %}
+  <section class="rc-card">
+    <div class="rc-card-header">
+      <h1>Banners de publicidade</h1>
+      <a href="/ads/new" class="rc-button rc-button-primary">Novo banner</a>
+    </div>
+
+    {% if ads|length == 0 %}
+      <p>Nenhum banner cadastrado ainda.</p>
+    {% else %}
+      <table class="rc-table">
+        <thead>
+          <tr>
+            <th>Título</th>
+            <th>Posição</th>
+            <th>Ativo</th>
+            <th>Criado em</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ad in ads %}
+            <tr>
+              <td>{{ ad.title }}</td>
+              <td>{{ ad.position }}</td>
+              <td>{{ "Sim" if ad.is_active else "Não" }}</td>
+              <td>{{ ad.created_at[:19] if ad.created_at else "-" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </section>
+{% endblock %}
+

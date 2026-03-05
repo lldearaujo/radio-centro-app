@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>{% block title %}Painel de Enquetes{% endblock %} - Rádio Centro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="rc-header">
+      <div class="rc-header-inner">
+        <div class="rc-header-logo">
+          <span class="rc-header-title">Rádio Centro Cajazeiras</span>
+          <span class="rc-header-subtitle">Painel administrativo</span>
+        </div>
+        <nav class="rc-nav">
+          <a href="/polls">Enquetes</a>
+          <a href="/ads">Banners</a>
+          <a href="/programs">Programas</a>
+          <a href="/notifications">Notificações</a>
+          <a href="/logout">Sair</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="rc-main">
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>
+

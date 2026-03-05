@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+
+{% block title %}Novo programa{% endblock %}
+
+{% block content %}
+  <section class="rc-card">
+    <h1>Novo programa</h1>
+
+    {% if error %}
+      <p class="rc-error">{{ error }}</p>
+    {% endif %}
+
+    <form method="post" class="rc-form">
+      <label>
+        Nome do programa
+        <input type="text" name="name" required value="{{ name or '' }}" />
+      </label>
+
+      <label>
+        Apresentador (opcional)
+        <input type="text" name="host" value="{{ host or '' }}" />
+      </label>
+
+      <label>
+        Descrição (opcional)
+        <textarea name="description" rows="3">{{ description or '' }}</textarea>
+      </label>
+
+      <fieldset style="margin-top: 12px; margin-bottom: 12px;">
+        <legend>Dias da semana</legend>
+        {% set selected = weekdays or [] %}
+        <label class="rc-inline">
+          <input type="checkbox" name="weekdays" value="1" {% if 1 in selected %}checked{% endif %} />
+          Segunda
+        </label>
+        <label class="rc-inline">
+          <input type="checkbox" name="weekdays" value="2" {% if 2 in selected %}checked{% endif %} />
+          Terça
+        </label>
+        <label class="rc-inline">
+          <input type="checkbox" name="weekdays" value="3" {% if 3 in selected %}checked{% endif %} />
+          Quarta
+        </label>
+        <label class="rc-inline">
+          <input type="checkbox" name="weekdays" value="4" {% if 4 in selected %}checked{% endif %} />
+          Quinta
+        </label>
+        <label class="rc-inline">
+          <input type="checkbox" name="weekdays" value="5" {% if 5 in selected %}checked{% endif %} />
+          Sexta
+        </label>
+        <label class="rc-inline">
+          <input type="checkbox" name="weekdays" value="6" {% if 6 in selected %}checked{% endif %} />
+          Sábado
+        </label>
+        <label class="rc-inline">
+          <input type="checkbox" name="weekdays" value="0" {% if 0 in selected %}checked{% endif %} />
+          Domingo
+        </label>
+      </fieldset>
+
+      <label>
+        Horário de início
+        <input type="time" name="start_time" required value="{{ start_time or '' }}" />
+      </label>
+
+      <label>
+        Horário de fim
+        <input type="time" name="end_time" required value="{{ end_time or '' }}" />
+      </label>
+
+      <label class="rc-inline">
+        <input type="checkbox" name="notify_on_start" value="true" {% if notify_on_start %}checked{% endif %} />
+        Enviar notificação no início (botão "Notificar agora" ficará disponível)
+      </label>
+
+      <label class="rc-inline">
+        <input type="checkbox" name="is_active" value="true" {% if is_active %}checked{% endif %} />
+        Programa ativo
+      </label>
+
+      <button type="submit" class="rc-button rc-button-primary">Salvar</button>
+    </form>
+  </section>
+{% endblock %}
+

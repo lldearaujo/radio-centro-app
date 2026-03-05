@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+
+{% block title %}Notificações{% endblock %}
+
+{% block content %}
+  <section class="rc-card">
+    <div class="rc-card-header">
+      <h1>Notificações enviadas</h1>
+      <a href="/notifications/new" class="rc-button rc-button-primary">Nova notificação</a>
+    </div>
+
+    {% if logs|length == 0 %}
+      <p>Nenhuma notificação enviada ainda.</p>
+    {% else %}
+      <table class="rc-table">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Título</th>
+            <th>Mensagem</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+            <tr>
+              <td>{{ log.created_at[:19] if log.created_at else "-" }}</td>
+              <td>{{ log.title }}</td>
+              <td>{{ log.body }}</td>
+              <td>
+                {% if log.sent_ok %}
+                  Enviado
+                {% else %}
+                  Falha
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </section>
+{% endblock %}
+

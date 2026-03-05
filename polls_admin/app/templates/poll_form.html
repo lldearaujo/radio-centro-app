@@ -1,0 +1,66 @@
+{% extends "layout.html" %}
+
+{% block title %}Nova enquete{% endblock %}
+
+{% block content %}
+  <section class="rc-card">
+    <h1>Nova enquete</h1>
+    {% if error %}
+      <p class="rc-error">{{ error }}</p>
+    {% endif %}
+
+    <form method="post" class="rc-form">
+      <label>
+        Pergunta
+        <input type="text" name="title" required value="{{ poll.title if poll else '' }}" />
+      </label>
+
+      <label>
+        Descrição (opcional)
+        <textarea name="description" rows="3">{{ poll.description if poll else '' }}</textarea>
+      </label>
+
+      <label>
+        Início (opcional)
+        <input
+          type="datetime-local"
+          name="starts_at"
+          value="{{ poll.starts_at[:16] if poll and poll.starts_at else '' }}"
+        />
+      </label>
+
+      <label>
+        Fim (encerramento da enquete)
+        <input
+          type="datetime-local"
+          name="ends_at"
+          required
+          value="{{ poll.ends_at[:16] if poll and poll.ends_at else '' }}"
+        />
+      </label>
+
+      <fieldset>
+        <legend>Opções</legend>
+        {% for opt in options %}
+          <input
+            type="text"
+            name="options"
+            value="{{ opt }}"
+            placeholder="Opção de resposta"
+          />
+        {% endfor %}
+        <!-- Campos extras vazios para facilitar adicionar texto -->
+        <input type="text" name="options" value="" placeholder="Opção de resposta" />
+        <input type="text" name="options" value="" placeholder="Opção de resposta" />
+      </fieldset>
+
+      <label class="rc-inline">
+        <input type="checkbox" name="highlight" value="true" />
+        Destacar enquete na home do app
+      </label>
+
+      <button type="submit" class="rc-button rc-button-primary">Salvar</button>
+    </form>
+  </section>
+{% endblock %}
+

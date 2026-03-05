@@ -1,12 +1,31 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Linking } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Linking, ActivityIndicator, ScrollView } from 'react-native';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize } from '../../src/constants/theme';
 import { useAudio } from '../../src/context/AudioContext';
 import { Config } from '../../src/constants/config';
+import { useVoterId } from '../../src/hooks/useVoterId';
+import {
+    getActivePolls,
+    getPollResults,
+    getPollWithOptions,
+    getUserVoteForPoll,
+    PollResults,
+    PollWithOptions,
+} from '../../src/services/polls';
+import { getActiveHomeBanner, HomeBanner } from '../../src/services/ads';
+import { PollCard } from '../../src/components/PollCard';
+import { getActivePrograms, Program } from '../../src/services/programs';
 
 export default function AudioScreen() {
     const { isPlaying, isLoading, play, pause, status } = useAudio();
+    const voterId = useVoterId();
+    const [highlightPoll, setHighlightPoll] = useState<PollWithOptions | null>(null);
+    const [highlightResults, setHighlightResults] = useState<PollResults | null>(null);
+    const [highlightHasVoted, setHighlightHasVoted] = useState(false);
+    const [loadingPoll, setLoadingPoll] = useState(false);
+    const [banner, setBanner] = useState<HomeBanner | null>(null);
+    const [currentProgram, setCurrentProgram] = useState<Program | null>(null);
 
     const handleTogglePlay = async () => {
         if (isPlaying) {
@@ -17,7 +36,7 @@ export default function AudioScreen() {
     };
 
     const handleWhatsApp = () => {
-        const message = 'Olá, Rádio Centro! Gostaria de enviar uma mensagem.';
+        const message = 'Olá! Gostaria de enviar uma mensagem para a rádio.';
         const url = `whatsapp://send?phone=${Config.social.whatsapp}&text=${encodeURIComponent(message)}`;
 
         Linking.canOpenURL(url).then(supported => {
@@ -30,8 +49,105 @@ export default function AudioScreen() {
         }).catch(err => console.error('An error occurred', err));
     };
 
+    useEffect(() => {
+        const loadBanner = async () => {
+            try {
+                const activeBanner = await getActiveHomeBanner();
+                setBanner(activeBanner);
+            } catch (error) {
+                console.warn('[AudioScreen] Erro ao carregar banner:', error);
+            }
+        };
+
+        loadBanner();
+    }, []);
+
+    useEffect(() => {
+        const loadCurrentProgram = async () => {
+            try {
+                const programs = await getActivePrograms();
+                const now = new Date();
+                const today = now.getDay();
+                const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+                const parseTimeToMinutes = (time: string): number => {
+                    const [h, m] = time.split(':').map((v) => parseInt(v, 10));
+                    if (Number.isNaN(h) || Number.isNaN(m)) return 0;
+                    return h * 60 + m;
+                };
+
+                const todays = programs.filter((p) => (p.weekdays || []).includes(today));
+                const playing = todays.find((p) => {
+                    const start = parseTimeToMinutes(p.start_time);
+                    const end = parseTimeToMinutes(p.end_time);
+                    return nowMinutes >= start && nowMinutes <= end;
+                });
+
+                setCurrentProgram(playing ?? null);
+            } catch (error) {
+                console.warn('[AudioScreen] Erro ao carregar programa atual:', error);
+                setCurrentProgram(null);
+            }
+        };
+
+        loadCurrentProgram();
+    }, []);
+
+    useEffect(() => {
+        const loadHighlightPoll = async () => {
+            if (!voterId) return;
+            try {
+                setLoadingPoll(true);
+                const polls = await getActivePolls();
+                const highlight = polls.find(p => p.highlight) ?? polls[0];
+                if (!highlight) {
+                    setHighlightPoll(null);
+                    setHighlightResults(null);
+                    setHighlightHasVoted(false);
+                    return;
+                }
+
+                const full = await getPollWithOptions(highlight.id);
+                if (!full) return;
+
+                setHighlightPoll(full);
+
+                const [results, userVote] = await Promise.all([
+                    getPollResults(full.id),
+                    getUserVoteForPoll(full.id, voterId),
+                ]);
+
+                setHighlightResults(results);
+                setHighlightHasVoted(!!userVote);
+            } catch (error) {
+                console.warn('[AudioScreen] Erro ao carregar enquete em destaque:', error);
+            } finally {
+                setLoadingPoll(false);
+            }
+        };
+
+        loadHighlightPoll();
+    }, [voterId]);
+
+    const handleVoteHighlight = async (optionId: string) => {
+        if (!highlightPoll || !voterId) return;
+        try {
+            const { voteOnPoll } = await import('../../src/services/polls');
+            await voteOnPoll(highlightPoll.id, optionId, voterId);
+            const updated = await getPollResults(highlightPoll.id);
+            setHighlightResults(updated);
+            setHighlightHasVoted(true);
+        } catch (error) {
+            console.warn('[AudioScreen] Erro ao votar na enquete em destaque:', error);
+        }
+    };
+
     return (
-        <View style={styles.container}>
+        <ScrollView
+            style={styles.container}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+        >
             <View style={styles.content}>
                 <View style={styles.logoContainer}>
                     <Image
@@ -41,7 +157,15 @@ export default function AudioScreen() {
                     />
                 </View>
 
-                <Text style={styles.subtitle}>Ao Vivo</Text>
+                <View style={styles.liveHeader}>
+                    <View style={styles.liveBadge}>
+                        <View style={styles.liveDot} />
+                        <Text style={styles.liveBadgeText}>AO VIVO</Text>
+                    </View>
+                    <Text style={styles.subtitle}>
+                        {currentProgram ? `No ar: ${currentProgram.name}` : 'No ar'}
+                    </Text>
+                </View>
 
                 <View style={styles.controlsContainer}>
                     <TouchableOpacity
@@ -64,8 +188,44 @@ export default function AudioScreen() {
                         <Text style={styles.messageButtonText}>Enviar Mensagem</Text>
                     </TouchableOpacity>
                 </View>
+
+                {banner && (
+                    <TouchableOpacity
+                        style={styles.bannerContainer}
+                        activeOpacity={0.9}
+                        onPress={() => banner.targetUrl && Linking.openURL(banner.targetUrl)}
+                        disabled={!banner.targetUrl}
+                    >
+                        <Image
+                            source={{ uri: banner.imageUrl }}
+                            style={styles.bannerImage}
+                            resizeMode="cover"
+                        />
+                    </TouchableOpacity>
+                )}
+
+                {/* Enquete em destaque */}
+                <View style={styles.pollContainer}>
+                    {loadingPoll ? (
+                        <View style={styles.pollLoading}>
+                            <ActivityIndicator size="small" color={Colors.primary} />
+                            <Text style={styles.pollLoadingText}>Carregando enquete...</Text>
+                        </View>
+                    ) : highlightPoll ? (
+                        <>
+                            <Text style={styles.pollSectionTitle}>Enquete do dia</Text>
+                            <PollCard
+                                poll={highlightPoll}
+                                results={highlightResults ?? undefined}
+                                isLoadingResults={false}
+                                hasVoted={highlightHasVoted}
+                                onVote={handleVoteHighlight}
+                            />
+                        </>
+                    ) : null}
+                </View>
             </View>
-        </View>
+        </ScrollView>
     );
 }
 
@@ -73,12 +233,14 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: Colors.background,
+    },
+    scrollContent: {
         alignItems: 'center',
-        justifyContent: 'center',
+        paddingVertical: Spacing.lg,
     },
     content: {
         alignItems: 'center',
-        padding: Spacing.xl,
+        paddingHorizontal: Spacing.lg,
         width: '100%',
     },
     logoContainer: {
@@ -100,9 +262,35 @@ const styles = StyleSheet.create({
     },
     subtitle: {
         fontSize: FontSize.lg,
-        color: Colors.textLight,
-        marginBottom: Spacing.xl,
+        color: Colors.text,
+        fontWeight: '600',
         marginTop: Spacing.sm,
+    },
+    liveHeader: {
+        width: '100%',
+        alignItems: 'flex-start',
+        marginBottom: Spacing.lg,
+    },
+    liveBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.secondary,
+        paddingHorizontal: Spacing.sm,
+        paddingVertical: 4,
+        borderRadius: 999,
+    },
+    liveDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: Colors.white,
+        marginRight: 6,
+    },
+    liveBadgeText: {
+        fontSize: FontSize.xs,
+        color: Colors.white,
+        fontWeight: 'bold',
+        letterSpacing: 1,
     },
     controlsContainer: {
         alignItems: 'center',
@@ -120,7 +308,7 @@ const styles = StyleSheet.create({
     },
     actionsContainer: {
         width: '100%',
-        marginTop: Spacing.xl,
+        marginTop: Spacing.lg,
         alignItems: 'center',
     },
     messageButton: {
@@ -141,5 +329,42 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: FontSize.md,
         marginLeft: Spacing.sm,
+    },
+    bannerContainer: {
+        width: '100%',
+        marginTop: Spacing.lg,
+        borderRadius: 16,
+        overflow: 'hidden',
+        backgroundColor: Colors.gray,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    bannerImage: {
+        width: '100%',
+        height: 120,
+    },
+    pollContainer: {
+        width: '100%',
+        marginTop: Spacing.lg,
+    },
+    pollLoading: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    pollLoadingText: {
+        marginLeft: Spacing.sm,
+        fontSize: FontSize.sm,
+        color: Colors.textLight,
+    },
+    pollSectionTitle: {
+        fontSize: FontSize.md,
+        fontWeight: 'bold',
+        color: Colors.text,
+        marginBottom: Spacing.sm,
+        marginHorizontal: Spacing.md,
     },
 });
