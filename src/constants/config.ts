@@ -12,6 +12,11 @@ export const Config = {
         instagram: 'radiocentrocz',
         facebook: '',
     },
+    youtube: {
+        // ATENÇÃO: preencha com o channelId do canal do YouTube
+        // Exemplo de formato: UCxxxxxxxxxxxxxxxxxxxxxx
+        channelId: 'UCGLDmLJ8rtD-VyLdbrj1z5g',
+    },
     app: {
         name: 'Rádio Centro Cajazeiras',
         version: '1.0.0',

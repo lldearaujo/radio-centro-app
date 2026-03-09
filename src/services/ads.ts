@@ -19,23 +19,37 @@ const ensureClient = () => {
 const getActiveBannerByPosition = async (position: string): Promise<HomeBanner | null> => {
   const client = ensureClient();
 
-  const { data, error } = await client
+  const baseQuery = client
     .from('ads_banners')
     .select('id, title, image_url, target_url, position, is_active, kind')
-    .eq('position', position)
     .eq('is_active', true)
     .eq('kind', 'image')
     .order('created_at', { ascending: false });
+
+  // Primeiro tenta pela posição específica configurada
+  const { data, error } = await baseQuery.eq('position', position);
 
   if (error) {
     console.error('[Ads] Erro ao buscar banner ativo:', error);
     throw error;
   }
 
-  if (!data || !Array.isArray(data) || data.length === 0) return null;
+  let rows = (data ?? []) as any[];
 
-  const randomIndex = Math.floor(Math.random() * data.length);
-  const chosen = data[randomIndex];
+  // Fallback: se não encontrar nada nessa posição, tenta qualquer banner ativo
+  if (!rows.length) {
+    const { data: fallbackData, error: fallbackError } = await baseQuery;
+    if (fallbackError) {
+      console.error('[Ads] Erro ao buscar banner ativo (fallback):', fallbackError);
+      throw fallbackError;
+    }
+    rows = (fallbackData ?? []) as any[];
+  }
+
+  if (!rows.length) return null;
+
+  const randomIndex = Math.floor(Math.random() * rows.length);
+  const chosen = rows[randomIndex];
 
   return {
     id: chosen.id as string,

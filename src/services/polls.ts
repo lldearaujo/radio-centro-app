@@ -71,6 +71,31 @@ export const getActivePolls = async (): Promise<Poll[]> => {
   });
 };
 
+export const getClosedPolls = async (): Promise<Poll[]> => {
+  const client = ensureClient();
+
+  const { data, error } = await client
+    .from('polls')
+    .select('*')
+    .neq('status', 'draft')
+    .order('highlight', { ascending: false })
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('[Polls] Erro ao buscar enquetes encerradas:', error);
+    throw error;
+  }
+
+  const polls = (data ?? []) as Poll[];
+  const now = new Date();
+
+  return polls.filter((poll) => {
+    const explicitlyClosed = poll.status === 'closed';
+    const hasEnded = !!poll.ends_at && new Date(poll.ends_at) < now;
+    return explicitlyClosed || hasEnded;
+  });
+};
+
 export const getPollWithOptions = async (
   pollId: string,
 ): Promise<PollWithOptions | null> => {

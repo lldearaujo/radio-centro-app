@@ -32,8 +32,11 @@ export const PollCard: React.FC<PollCardProps> = ({
 }) => {
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const isClosed = poll.status === 'closed';
-  const [collapsed, setCollapsed] = useState<boolean>(!!defaultCollapsed);
+  const isClosed =
+    poll.status === 'closed' ||
+    (poll.ends_at ? new Date(poll.ends_at) < new Date() : false);
+  const initialCollapsed = defaultCollapsed ?? isClosed;
+  const [collapsed, setCollapsed] = useState<boolean>(initialCollapsed);
 
   const optionsWithStats = useMemo(() => {
     if (!results) {
@@ -76,8 +79,24 @@ export const PollCard: React.FC<PollCardProps> = ({
 
   const showResults = hasVoted || isClosed;
 
+  const headerResultLabel = useMemo(() => {
+    if (!results || results.totalVotes <= 0) return null;
+
+    const sorted = [...results.perOption].sort((a, b) => b.votes - a.votes);
+    const winner = sorted[0];
+    if (!winner) return null;
+
+    const pct = winner.percentage;
+    const total = results.totalVotes;
+    const statusLabel = isClosed ? 'Encerrada' : 'Parcial';
+
+    return `${statusLabel} • ${winner.label} (${pct.toFixed(0)}%) • ${total} voto${
+      total === 1 ? '' : 's'
+    }`;
+  }, [results, isClosed]);
+
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, isClosed ? styles.cardClosed : styles.cardActive]}>
       <TouchableOpacity
         style={styles.header}
         activeOpacity={0.8}
@@ -85,6 +104,9 @@ export const PollCard: React.FC<PollCardProps> = ({
       >
         <View style={styles.headerTextWrapper}>
           <Text style={styles.title}>{poll.title}</Text>
+          {showResults && headerResultLabel && (
+            <Text style={styles.headerResult}>{headerResultLabel}</Text>
+          )}
         </View>
         <MaterialIcons
           name={collapsed ? 'expand-more' : 'expand-less'}
@@ -215,6 +237,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.text,
     marginBottom: Spacing.xs,
+  },
+  headerResult: {
+    fontSize: FontSize.xs,
+    color: Colors.textLight,
+  },
+  cardActive: {
+    backgroundColor: '#FFF8F8',
+    borderColor: 'rgba(211, 47, 47, 0.18)',
+  },
+  cardClosed: {
+    backgroundColor: '#F5F5F5',
+    borderColor: Colors.border,
   },
   description: {
     fontSize: FontSize.sm,

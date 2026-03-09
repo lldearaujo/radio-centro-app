@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Linking, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Linking, ScrollView, ActivityIndicator } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { useFocusEffect } from 'expo-router';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
@@ -7,12 +7,16 @@ import { Colors, Spacing, FontSize } from '../../src/constants/theme';
 import { Config } from '../../src/constants/config';
 import { useAudio } from '../../src/context/AudioContext';
 import { getActiveVideoBanner, HomeBanner } from '../../src/services/ads';
+import { fetchYouTubeVideos, YouTubeVideo } from '../../src/services/youtube';
 
 export default function VideoScreen() {
     const videoRef = useRef<Video>(null);
     const [status, setStatus] = useState<any>({});
     const { pause: pauseAudio, isPlaying: isAudioPlaying } = useAudio();
     const [banner, setBanner] = useState<HomeBanner | null>(null);
+    const [youtubeVideos, setYoutubeVideos] = useState<YouTubeVideo[]>([]);
+    const [isLoadingYouTube, setIsLoadingYouTube] = useState(false);
+    const [youtubeError, setYoutubeError] = useState<string | null>(null);
 
     // Rastrear se o vídeo já começou a tocar (para ignorar buffering contínuo)
     const hasPlayedRef = useRef(false);
@@ -44,6 +48,24 @@ export default function VideoScreen() {
         };
 
         loadBanner();
+    }, []);
+
+    useEffect(() => {
+        const loadYouTubeVideos = async () => {
+            try {
+                setIsLoadingYouTube(true);
+                setYoutubeError(null);
+                const videos = await fetchYouTubeVideos(5);
+                setYoutubeVideos(videos);
+            } catch (error) {
+                console.warn('[VideoScreen] Erro ao carregar vídeos do YouTube:', error);
+                setYoutubeError('Não foi possível carregar os vídeos do YouTube.');
+            } finally {
+                setIsLoadingYouTube(false);
+            }
+        };
+
+        loadYouTubeVideos();
     }, []);
 
     const handleTogglePlay = async () => {
@@ -95,6 +117,42 @@ export default function VideoScreen() {
         const url = `whatsapp://send?phone=${Config.social.whatsapp}&text=${encodeURIComponent(message)}`;
         Linking.openURL(url).catch(() => {
             Linking.openURL(`https://wa.me/${Config.social.whatsapp}?text=${encodeURIComponent(message)}`);
+        });
+    };
+
+    const getYouTubeUrl = (video: YouTubeVideo) => {
+        if (video.link && video.link.startsWith('http')) {
+            return video.link;
+        }
+        if (video.id) {
+            return `https://www.youtube.com/watch?v=${video.id}`;
+        }
+        // Fallback: canal da Rádio Centro
+        return 'https://www.youtube.com/@radiocentrocajazeiras853';
+    };
+
+    const handleOpenYouTubeVideo = async (video: YouTubeVideo) => {
+        try {
+            const url = getYouTubeUrl(video);
+            const canOpen = await Linking.canOpenURL(url);
+            if (!canOpen) {
+                console.warn('[VideoScreen] Não foi possível abrir URL do YouTube:', url);
+                return;
+            }
+            await Linking.openURL(url);
+        } catch (error) {
+            console.warn('[VideoScreen] Erro ao tentar abrir vídeo do YouTube:', error);
+        }
+    };
+
+    const formatDate = (value: string) => {
+        if (!value) return '';
+        const date = new Date(value);
+        if (isNaN(date.getTime())) return '';
+        return date.toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
         });
     };
 
@@ -191,9 +249,51 @@ export default function VideoScreen() {
                 )}
 
                 <TouchableOpacity style={styles.messageButton} onPress={handleWhatsApp}>
-                    <FontAwesome name="whatsapp" size={24} color="#FFF" />
-                    <Text style={styles.messageButtonText}>Enviar Mensagem</Text>
+                    <FontAwesome name="whatsapp" size={20} color="#FFF" />
+                    <Text style={styles.messageButtonText}>Enviar mensagem</Text>
                 </TouchableOpacity>
+
+                <View style={styles.youtubeSection}>
+                    <Text style={styles.youtubeTitle}>Últimas transmissões no YouTube</Text>
+
+                    {isLoadingYouTube && (
+                        <View style={styles.youtubeLoading}>
+                            <ActivityIndicator size="small" color={Colors.primary} />
+                            <Text style={styles.youtubeLoadingText}>Carregando vídeos...</Text>
+                        </View>
+                    )}
+
+                    {!!youtubeError && !isLoadingYouTube && (
+                        <Text style={styles.youtubeErrorText}>{youtubeError}</Text>
+                    )}
+
+                    {!isLoadingYouTube && !youtubeError && youtubeVideos.map((video) => (
+                        <TouchableOpacity
+                            key={video.id}
+                            style={styles.youtubeItem}
+                            activeOpacity={0.8}
+                            onPress={() => handleOpenYouTubeVideo(video)}
+                        >
+                            {!!video.thumbnail && (
+                                <Image
+                                    source={{ uri: video.thumbnail }}
+                                    style={styles.youtubeThumbnail}
+                                    resizeMode="cover"
+                                />
+                            )}
+                            <View style={styles.youtubeInfo}>
+                                <Text style={styles.youtubeItemTitle} numberOfLines={2}>
+                                    {video.title}
+                                </Text>
+                                {!!video.publishedAt && (
+                                    <Text style={styles.youtubeItemDate}>
+                                        {formatDate(video.publishedAt)}
+                                    </Text>
+                                )}
+                            </View>
+                        </TouchableOpacity>
+                    ))}
+                </View>
             </View>
         </ScrollView>
     );
@@ -312,23 +412,76 @@ const styles = StyleSheet.create({
     },
     messageButton: {
         flexDirection: 'row',
-        backgroundColor: '#25D366',
-        paddingVertical: Spacing.md,
-        paddingHorizontal: Spacing.xl,
-        borderRadius: 25,
         alignItems: 'center',
-        marginTop: 'auto', // Push to bottom if needed, or just margin
-        marginBottom: Spacing.xl,
-        elevation: 3,
+        alignSelf: 'center',
+        paddingVertical: Spacing.sm,
+        paddingHorizontal: Spacing.lg,
+        borderRadius: 24,
+        backgroundColor: '#25D366',
+        marginTop: Spacing.sm,
+        marginBottom: Spacing.lg,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
-        shadowRadius: 2,
+        shadowRadius: 3,
+        elevation: 3,
     },
     messageButtonText: {
         color: '#FFF',
         fontWeight: 'bold',
         fontSize: FontSize.md,
         marginLeft: Spacing.sm,
+    },
+    youtubeSection: {
+        width: '100%',
+        marginBottom: Spacing.lg,
+    },
+    youtubeTitle: {
+        fontSize: FontSize.lg,
+        fontWeight: 'bold',
+        color: Colors.text,
+        marginBottom: Spacing.sm,
+    },
+    youtubeLoading: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: Spacing.sm,
+    },
+    youtubeLoadingText: {
+        marginLeft: Spacing.sm,
+        fontSize: FontSize.sm,
+        color: Colors.textLight,
+    },
+    youtubeErrorText: {
+        fontSize: FontSize.sm,
+        color: 'red',
+        marginTop: Spacing.xs,
+    },
+    youtubeItem: {
+        flexDirection: 'row',
+        marginBottom: Spacing.sm,
+        backgroundColor: Colors.gray,
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    youtubeThumbnail: {
+        width: 120,
+        height: 80,
+    },
+    youtubeInfo: {
+        flex: 1,
+        paddingHorizontal: Spacing.sm,
+        paddingVertical: Spacing.xs,
+        justifyContent: 'space-between',
+    },
+    youtubeItemTitle: {
+        fontSize: FontSize.sm,
+        color: Colors.text,
+        fontWeight: '600',
+    },
+    youtubeItemDate: {
+        fontSize: FontSize.xs,
+        color: Colors.textLight,
+        marginTop: Spacing.xs,
     },
 });

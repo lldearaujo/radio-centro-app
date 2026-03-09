@@ -4,9 +4,11 @@ import { Colors, Spacing, FontSize } from '../../src/constants/theme';
 import { useVoterId } from '../../src/hooks/useVoterId';
 import {
   getActivePolls,
+  getClosedPolls,
   getPollResults,
   getPollWithOptions,
   getUserVoteForPoll,
+  Poll,
   PollResults,
   PollWithOptions,
 } from '../../src/services/polls';
@@ -29,32 +31,38 @@ export default function PollsScreen() {
       setErrorMessage(null);
 
       try {
-        const activePolls = await getActivePolls();
+        const [activePolls, closedPolls] = await Promise.all([getActivePolls(), getClosedPolls()]);
 
         const fullPolls: PollWithOptions[] = [];
         const resultsMap: Record<string, PollResults | null> = {};
         const votedMap: Record<string, boolean> = {};
 
-        for (const poll of activePolls) {
-          const full = await getPollWithOptions(poll.id);
-          if (!full) continue;
+        const processPollList = async (pollList: Poll[]) => {
+          for (const poll of pollList) {
+            const full = await getPollWithOptions(poll.id);
+            if (!full) continue;
 
-          fullPolls.push(full);
+            fullPolls.push(full);
 
-          try {
-            const [results, userVote] = await Promise.all([
-              getPollResults(poll.id),
-              getUserVoteForPoll(poll.id, voterId),
-            ]);
+            try {
+              const [results, userVote] = await Promise.all([
+                getPollResults(poll.id),
+                getUserVoteForPoll(poll.id, voterId),
+              ]);
 
-            resultsMap[poll.id] = results;
-            votedMap[poll.id] = !!userVote;
-          } catch (innerError) {
-            console.warn('[PollsScreen] Erro ao carregar detalhes da enquete:', innerError);
-            resultsMap[poll.id] = null;
-            votedMap[poll.id] = false;
+              resultsMap[poll.id] = results;
+              votedMap[poll.id] = !!userVote;
+            } catch (innerError) {
+              console.warn('[PollsScreen] Erro ao carregar detalhes da enquete:', innerError);
+              resultsMap[poll.id] = null;
+              votedMap[poll.id] = false;
+            }
           }
-        }
+        };
+
+        // Garante que enquetes ativas aparecem antes das encerradas na listagem
+        await processPollList(activePolls);
+        await processPollList(closedPolls);
 
         setPolls(fullPolls);
         setResultsByPoll(resultsMap);
@@ -143,17 +151,23 @@ export default function PollsScreen() {
           <Text style={styles.emptySubText}>Volte em breve para participar das próximas!</Text>
         </View>
       ) : (
-        polls.map((poll) => (
-          <PollCard
-            key={poll.id}
-            poll={poll}
-            results={resultsByPoll[poll.id]}
-            isLoadingResults={false}
-            hasVoted={!!votedPolls[poll.id]}
-            onVote={handleVoteFactory(poll.id)}
-            defaultCollapsed={false}
-          />
-        ))
+        polls.map((poll) => {
+          const isClosed =
+            poll.status === 'closed' ||
+            (poll.ends_at ? new Date(poll.ends_at) < new Date() : false);
+
+          return (
+            <PollCard
+              key={poll.id}
+              poll={poll}
+              results={resultsByPoll[poll.id]}
+              isLoadingResults={false}
+              hasVoted={!!votedPolls[poll.id]}
+              onVote={handleVoteFactory(poll.id)}
+              defaultCollapsed={isClosed}
+            />
+          );
+        })
       )}
     </ScrollView>
   );

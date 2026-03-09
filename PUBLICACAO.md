@@ -202,6 +202,17 @@ npx eas-cli submit:list
 4. **Versões:** Sempre incremente a versão antes de um novo build
 5. **Política de privacidade:** É obrigatória para apps que coletam dados
 
+### Política de Privacidade
+
+O arquivo **`POLITICA-DE-PRIVACIDADE.md`** na raiz do projeto contém a política de privacidade do App Rádio Centro em português, em conformidade com a LGPD.
+
+**Para usar nas lojas:**
+1. Edite o arquivo e preencha o **e-mail de contato** na seção 10.
+2. Publique o conteúdo em uma URL pública (site da rádio, GitHub Pages, etc.).
+3. Use essa URL no campo "Política de privacidade" da Google Play Console e do App Store Connect.
+
+Exemplo de URL: `https://radiocentro.com.br/privacidade` ou `https://seusite.github.io/radio-centro/privacidade`
+
 ## 🆘 Suporte
 
 - Documentação EAS: https://docs.expo.dev/build/introduction/

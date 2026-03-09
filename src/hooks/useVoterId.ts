@@ -28,6 +28,12 @@ export const useVoterId = (): string | null => {
         }
       } catch (error) {
         console.warn('Falha ao obter voterId do dispositivo:', error);
+        // Fallback em caso de falha no SecureStore (por exemplo, em alguns ambientes de produção ou web)
+        // para não bloquear o carregamento das enquetes.
+        if (isMounted) {
+          const fallbackId = uuidv4();
+          setVoterId(fallbackId);
+        }
       }
     };
 

@@ -4,7 +4,7 @@
     "slug": "radio-centro-cajazeiras",
     "version": "1.0.0",
     "orientation": "default",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/rc-logo-app.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -17,14 +17,17 @@
       "infoPlist": {
         "UIBackgroundModes": [
           "audio",
+          "fetch",
+          "audio",
           "fetch"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/rc-logo-app.png",
+        "backgroundColor": "#d50000"
       },
       "package": "com.radiocentro.app",
       "edgeToEdgeEnabled": true,
